@@ -199,6 +199,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
                 minIndexSizeChanged: 0,
                 colSpans: new Map(),
                 fixedSizes: new Map(),
+                rowStarts: new Map(),
             };
             refState.current!.idsInFirstRender = new Set(data.map((_: unknown, i: number) => getId(i)));
             if (maintainVisibleContentPosition) {
@@ -296,6 +297,13 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
             return rowHeight;
         };
 
+        const getRowNumberFromIndex = (index: number): number => {
+            if (maintainVisibleContentPosition && overrideItemLayout) {
+                return refState.current!.rowStarts.get(index) || 0;
+            }
+            return index % numColumnsProp;
+        };
+
         // this function rebuilds it's data on each addTotalSize
         // this can be further optimized either by rebuilding part that's changed or by moving achorElement up, keeping number of function iterations minimal
         const buildElementPositionsBelowAnchor = (): Map<string, number> => {
@@ -313,7 +321,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
             for (let i = anchorIndex - 1; i >= 0; i--) {
                 const id = getId(i);
                 const rowNumber = Math.floor(i / numColumnsProp);
-                if (i % numColumnsProp === 0) {
+                if (getRowNumberFromIndex(i) === 0) {
                     top -= getRowHeight(rowNumber);
                 }
                 map.set(id, top);
@@ -426,7 +434,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
             }
 
             const numColumns = peek$<number>(ctx, "numColumns");
-            const loopStartMod = loopStart % numColumns;
+            const loopStartMod = getRowNumberFromIndex(loopStart);
             if (loopStartMod > 0) {
                 loopStart -= loopStartMod;
             }
@@ -651,7 +659,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
 
                             // anchor elements to the bottom if element is below anchor
                             if (maintainVisibleContentPosition && itemIndex < anchorElementIndex) {
-                                const currentRow = Math.floor(itemIndex / numColumnsProp);
+                                const currentRow = getRowNumberFromIndex(itemIndex);
                                 const rowHeight = getRowHeight(currentRow);
                                 const elementHeight = getItemSize(id, itemIndex, data[i]);
                                 const diff = rowHeight - elementHeight; // difference between row height and element height
@@ -856,6 +864,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
             let column = 1;
             let maxSizeInRow = 0;
 
+            let rowNumber = 0;
             for (let i = 0; i < data.length; i++) {
                 const key = getId(i);
                 if (__DEV__) {
@@ -871,7 +880,35 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
                 if (refState.current.positions.get(key) != null && refState.current.indexByKey.get(key) === i) {
                     newPositions.set(key, refState.current.positions.get(key)!);
                 }
+
+                if (maintainVisibleContentPosition && overrideItemLayout) {
+                    const layout = { span: 1, size: 0 };
+                    const startNewRow = false;
+                    overrideItemLayout(layout, data[i], i, numColumnsProp, extraData);
+                    const { span } = layout;
+
+                   
+
+                    if (span > 1 && column + span > numColumnsProp + 1) {
+                        column = 1;
+                        rowNumber++;
+                    }
+
+                    refState.current.rowStarts.set(i, rowNumber);
+                    if (i < 10) {
+                        console.log("i", i, "span", span, "RN", rowNumber);
+                        console.log('column',column, numColumnsProp, span);
+                    }
+
+                    column += span;
+
+                    if (column > numColumnsProp || startNewRow) {
+                        column = 1;
+                        rowNumber++;
+                    }
+                }
             }
+            //console.log(refState.current.rowStarts);
             // getAnchorElementIndex needs indexByKey, build it first
             refState.current.indexByKey = indexByKey;
             refState.current.positions = newPositions;
@@ -917,6 +954,7 @@ const LegendListInner: <T>(props: LegendListProps<T> & { ref?: ForwardedRef<Lege
                 }
             }
 
+            column = 1;
             const anchorElementIndex = getAnchorElementIndex();
             for (let i = 0; i < data.length; i++) {
                 const key = getId(i);

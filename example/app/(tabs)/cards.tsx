@@ -10,15 +10,18 @@ LogBox.ignoreLogs(["Open debugger"]);
 interface CardsProps {
     numColumns?: number;
     overrideItemLayout?: LegendListProps<any>["overrideItemLayout"];
+    initialScrollIndex?: number;
+    shortCards?: boolean;
 }
 
-export default function Cards({ numColumns = 1, ...props }: CardsProps) {
+export default function Cards({ numColumns = 1, initialScrollIndex, shortCards,  ...props }: CardsProps) {
     const listRef = useRef<LegendListRef>(null);
 
     const [data, setData] = useState<Item[]>(
         () =>
             Array.from({ length: 1000 }, (_, i) => ({
                 id: i.toString(),
+                short: shortCards,
             })) as any[],
     );
 
@@ -42,10 +45,10 @@ export default function Cards({ numColumns = 1, ...props }: CardsProps) {
                 keyExtractor={(item) => `id${item.id}`}
                 estimatedItemSize={ESTIMATED_ITEM_LENGTH}
                 drawDistance={DRAW_DISTANCE}
-                maintainVisibleContentPosition
+                //maintainVisibleContentPosition
                 recycleItems={true}
                 numColumns={numColumns}
-                // initialScrollIndex={50}
+               // initialScrollIndex={initialScrollIndex}
                 // alignItemsAtEnd
                 // maintainScrollAtEnd
                 // onEndReached={({ distanceFromEnd }) => {

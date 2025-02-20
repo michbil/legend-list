@@ -7,6 +7,8 @@ export default function CardsColumns() {
     return (
         <Cards
             numColumns={2}
+            shortCards
+            initialScrollIndex={10}
             overrideItemLayout={(layout, item, index, numColumns, extraData) => {
                 if (index === 3) {
                     layout.span = 2;

@@ -35,7 +35,7 @@ export default function IntialScrollIndexFreeHeight() {
                 recycleItems={true}
                 ListHeaderComponent={<View style={{height:top}}/>}
                 ListFooterComponent={<View style={{height:bottom}}/>}
-                numColumns={1}
+                numColumns={2}
             />
         </View>
     );

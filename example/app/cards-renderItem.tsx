@@ -17,6 +17,7 @@ import Swipeable, { type SwipeableMethods } from "react-native-gesture-handler/R
 
 export interface Item {
     id: string;
+    short: boolean;
 }
 const demoNestedList = false;
 
@@ -148,7 +149,11 @@ export const ItemCard = ({
     const indexForData = Math.abs(item.id.includes("new") ? 100 + +item.id.replace("new", "") : +item.id);
 
     // Generate 1-5 random sentences
-    const numSentences = ((indexForData * 7919) % loremSentences.length) + 2; // Using prime number 7919 for better distribution
+    let numSentences = ((indexForData * 7919) % loremSentences.length) + 2; // Using prime number 7919 for better distribution
+    if (item.short) {
+        numSentences = ((indexForData * 7919) % loremSentences.length/2) + 2;
+        numSentences = Math.ceil(numSentences / 2);
+    }
     //   const indexForData =
     //     item.id === "0" ? 0 : item.id === "1" ? 1 : item.id === "new0" ? 2 : 3;
     //   const numSentences =

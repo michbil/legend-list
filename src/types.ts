@@ -119,6 +119,7 @@ export interface InternalState {
     minIndexSizeChanged: number | undefined;
     colSpans: Map<string, number>;
     fixedSizes: Map<string, number>;
+    rowStarts: Map<number, number>;
 }
 
 export interface ViewableRange<T> {
