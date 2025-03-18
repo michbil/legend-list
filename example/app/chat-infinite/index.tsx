@@ -34,6 +34,17 @@ const defaultChatMessages: Message[] = [
     { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
     { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
     { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we therdsafds fasfasf asfe yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we theasdfas fasf sadfsafre yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
+    { id: String(idCounter++), text: "Are we there yet?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 4 },
     { id: String(idCounter++), text: "How can I help you?", sender: "bot", timeStamp: Date.now() - MS_PER_SECOND * 3 },
 ];
 
@@ -115,13 +126,14 @@ const ChatExample = () => {
                     data={messages}
                     contentContainerStyle={styles.contentContainer}
                     keyExtractor={(item) => item.id}
-                    estimatedItemSize={80}
+                    estimatedItemSize={200}
                     maintainScrollAtEnd
                     maintainVisibleContentPosition
                     initialScrollIndex={messages.length - 1}
                     alignItemsAtEnd
                     recycleItems={true}
                     ListHeaderComponent={<View style={{ height: top }} />}
+                    waitForInitialLayout={false}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
