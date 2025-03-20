@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { Containers } from "./Containers";
 import { ENABLE_DEVMODE } from "./constants";
-import { set$, useStateContext } from "./state";
+import { set$, use$, useStateContext } from "./state";
 import { type LegendListProps, typedMemo } from "./types";
 import { useValue$ } from "./useValue$";
 
@@ -47,25 +47,45 @@ const getComponent = (Component: React.ComponentType<any> | React.ReactElement) 
 };
 
 const PaddingAndAdjust = () => {
+    const ctx = useStateContext();
     const animPaddingTop = useValue$("paddingTop", (v) => v, true);
-    const animScrollAdjust = useValue$("scrollAdjust", (v) => v, true);
+    const scrollAdjust = use$<number>("scrollAdjust");
 
-    const additionalSize = { marginTop: animScrollAdjust, paddingTop: animPaddingTop };
-    return <Animated.View style={additionalSize} />;
+    const paddingStyle = { paddingTop: animPaddingTop };
+    const scrollAdjustStyle = { marginTop: scrollAdjust}
+    return (
+        <>   
+        <Animated.View style={paddingStyle} />     
+        <Animated.View
+            style={scrollAdjustStyle}
+            onLayout={(evt) => {
+                console.log("onLayout", { layout: evt.nativeEvent.layout });
+                set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
+            }}
+        />
+        </>
+
+    );
 };
+
 
 const PaddingAndAdjustDevMode = () => {
     const animPaddingTop = useValue$("paddingTop", (v) => v, true);
-    const animScrollAdjust = useValue$("scrollAdjust", (v) => v, true);
-
+    const scrollAdjust = use$<number>("scrollAdjust");
+    const ctx = useStateContext();
     return (
         <>
-            <Animated.View style={{ marginTop: animScrollAdjust }} />
-            <Animated.View style={{ paddingTop: animPaddingTop }} />
+         <Animated.View style={{ paddingTop: animPaddingTop }} />
+            <Animated.View style={{marginTop: scrollAdjust}}  
+            onLayout={(evt) => {
+                console.log("onLayout", { layout: evt.nativeEvent });
+                set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
+            }} />
+           
             <Animated.View
                 style={{
                     position: "absolute",
-                    top: Animated.add(animScrollAdjust, Animated.multiply(animScrollAdjust, -1)),
+                    top: Animated.add(scrollAdjust, Animated.multiply(scrollAdjust, -1)),
                     height: animPaddingTop,
                     left: 0,
                     right: 0,
@@ -76,7 +96,7 @@ const PaddingAndAdjustDevMode = () => {
                 style={{
                     position: "absolute",
                     top: animPaddingTop,
-                    height: animScrollAdjust,
+                    height: scrollAdjust,
                     left: -16,
                     right: -16,
                     backgroundColor: "lightblue",
@@ -86,7 +106,7 @@ const PaddingAndAdjustDevMode = () => {
                 style={{
                     position: "absolute",
                     top: animPaddingTop,
-                    height: Animated.multiply(animScrollAdjust, -1),
+                    height: Animated.multiply(scrollAdjust, -1),
                     width: 8,
                     right: 4,
                     borderStyle: "dashed",

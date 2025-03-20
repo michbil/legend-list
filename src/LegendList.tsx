@@ -358,9 +358,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         const topPad = (peek$<number>(ctx, "stylePaddingTop") || 0) + (peek$<number>(ctx, "headerSize") || 0);
-        const previousScrollAdjust = scrollAdjustHandler.getAppliedAdjust();
-        const scrollExtra = Math.max(-16, Math.min(16, speed)) * 16;
+        const previousScrollAdjust = peek$<number>(ctx, "currentScrollAdjust") || 0;
+        const scrollExtra = 0//Math.max(-16, Math.min(16, speed)) * 16;
         const scroll = scrollState - previousScrollAdjust - topPad;
+
+       // console.log("scroll", scroll, scrollState, previousScrollAdjust, topPad);
 
         let scrollBufferTop = scrollBuffer;
         let scrollBufferBottom = scrollBuffer;
@@ -660,7 +662,9 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // If it's 0 then we're waiting for the initial layout to complete
         if (state.numPendingInitialLayout === 0) {
+          
             state.numPendingInitialLayout = state.endBuffered - state.startBuffered + 1;
+            console.log("numPendingInitialLayout", state.numPendingInitialLayout);
         }
 
         if (state.viewabilityConfigCallbackPairs) {
@@ -836,7 +840,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const calcTotalSizesAndPositions = ({ forgetPositions = false }) => {
+    const calcTotalSizesAndPositions = ({ forgetPositions = false, isFirst }: {forgetPositions: boolean, isFirst: boolean}) => {
         let totalSize = 0;
         let totalSizeBelowIndex = 0;
         const indexByKey = new Map();
@@ -947,23 +951,39 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         addTotalSize(null, totalSize, totalSizeBelowIndex);
     };
 
-    const isFirst = !refState.current.renderItem;
-    // Run first time and whenever data changes
-
-    if (isFirst || didDataChange || numColumnsProp !== peek$<number>(ctx, "numColumns")) {
-        refState.current.lastBatchingAction = Date.now();
-        if (!keyExtractorProp && !isFirst && didDataChange) {
-            // If we have no keyExtractor then we have no guarantees about previous item sizes so we have to reset
-            refState.current.sizes.clear();
-            refState.current.positions.clear();
-        }
-
-        calcTotalSizesAndPositions({ forgetPositions: false });
-    }
+   
 
     useEffect(() => {
+
+        const isFirst = !refState.current.isSecond;
+        refState.current.isSecond = true;
+
+       
+        if (isFirst) {
+            initalizeStateVars();
+            const state = refState.current!;
+            const viewability = setupViewability(props);
+            state.viewabilityConfigCallbackPairs = viewability;
+            state.enableScrollForNextCalculateItemsInView = !viewability;
+    
+            doInitialAllocateContainers();
+        }
         checkResetContainers(/*isFirst*/ isFirst);
-    }, [isFirst, dataProp, numColumnsProp]);
+
+
+        // Run first time and whenever data changes
+    
+        if (isFirst || didDataChange || numColumnsProp !== peek$<number>(ctx, "numColumns")) {
+            refState.current.lastBatchingAction = Date.now();
+            if (!keyExtractorProp && !isFirst && didDataChange) {
+                // If we have no keyExtractor then we have no guarantees about previous item sizes so we have to reset
+                refState.current.sizes.clear();
+                refState.current.positions.clear();
+            }
+    
+            calcTotalSizesAndPositions({ forgetPositions: false, isFirst });
+        }
+    }, [dataProp, numColumnsProp]);
 
     useEffect(() => {
         set$(ctx, "extraData", extraData);
@@ -986,9 +1006,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         set$(ctx, "numColumns", numColumnsProp);
         set$(ctx, "stylePaddingTop", stylePaddingTop);
     };
-    if (isFirst) {
-        initalizeStateVars();
-    }
     useEffect(initalizeStateVars, [memoizedLastItemKeys, numColumnsProp, stylePaddingTop]);
 
     const getRenderedItem = useCallback((key: string) => {
@@ -1060,14 +1077,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    useInit(() => {
-        const state = refState.current!;
-        const viewability = setupViewability(props);
-        state.viewabilityConfigCallbackPairs = viewability;
-        state.enableScrollForNextCalculateItemsInView = !viewability;
-
-        doInitialAllocateContainers();
-    });
+  
 
     const updateItemSize = useCallback((itemKey: string, size: number) => {
         const state = refState.current!;
@@ -1084,6 +1094,8 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const prevSize = getItemSize(itemKey, index, data as any);
 
         let needsCalculate = false;
+        let layoutPending = state.numPendingInitialLayout >= 0;
+        //console.log("LP", layoutPending, state.numPendingInitialLayout);
 
         if (state.numPendingInitialLayout > 0) {
             state.numPendingInitialLayout--;
@@ -1143,6 +1155,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             addTotalSize(itemKey, diff, 0);
 
+            console.log(layoutPending);
             doMaintainScrollAtEnd(true);
 
             if (onItemSizeChanged) {
@@ -1308,7 +1321,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                     state.anchorElement = { id, coordinate: firstIndexOffset };
                     state.belowAnchorElementPositions?.clear();
                     state.positions.clear();
-                    calcTotalSizesAndPositions({ forgetPositions: true }); // since we are choosing new anchor, we need to recalulate positions
+                    calcTotalSizesAndPositions({ forgetPositions: true, isFirst: false }); // since we are choosing new anchor, we need to recalulate positions
                     state.scrollForNextCalculateItemsInView = undefined;
                     state.startBufferedId = id;
                     state.minIndexSizeChanged = index;

@@ -126,14 +126,14 @@ const ChatExample = () => {
                     data={messages}
                     contentContainerStyle={styles.contentContainer}
                     keyExtractor={(item) => item.id}
-                    estimatedItemSize={200}
+                    estimatedItemSize={120}
                     maintainScrollAtEnd
                     maintainVisibleContentPosition
                     initialScrollIndex={messages.length - 1}
                     alignItemsAtEnd
                     recycleItems={true}
                     ListHeaderComponent={<View style={{ height: top }} />}
-                    waitForInitialLayout={false}
+                    waitForInitialLayout={true}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}
