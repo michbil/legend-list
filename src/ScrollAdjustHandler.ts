@@ -11,6 +11,7 @@ export class ScrollAdjustHandler {
     }
 
     private doAjdust() {
+        console.log("doAjdust", this.appliedAdjust);
         set$(this.context, "scrollAdjust", this.appliedAdjust);
         this.busy = false;
     }

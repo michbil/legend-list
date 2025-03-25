@@ -33,7 +33,6 @@ import type {
 } from "./types";
 import { typedForwardRef } from "./types";
 import { useCombinedRef } from "./useCombinedRef";
-import { useInit } from "./useInit";
 import { setupViewability, updateViewableItems } from "./viewability";
 
 const DEFAULT_DRAW_DISTANCE = 250;
@@ -269,7 +268,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 refState.current!.scrollAdjustHandler.requestAdjust(applyAdjustValue, (diff: number) => {
                     // event state.scroll will contain invalid value, until next handleScroll
                     // apply adjustment
-                    state.scroll -= diff;
+                    // state.scroll -= diff;
                 });
             }
         }
@@ -332,10 +331,20 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (!refState.current!.belowAnchorElementPositions) {
             state.belowAnchorElementPositions = buildElementPositionsBelowAnchor();
         }
-        const res = state.belowAnchorElementPositions!.get(id);
+        let res = state.belowAnchorElementPositions!.get(id);
 
         if (res === undefined) {
-            console.warn(`Undefined position below achor ${id} ${state.anchorElement?.id}`);
+            state.belowAnchorElementPositions = buildElementPositionsBelowAnchor();
+        }
+
+        res = state.belowAnchorElementPositions!.get(id);
+
+        if (res === undefined) {
+            console.warn(
+                `Undefined position below anchor ${id} ANCHOR: ${state.anchorElement?.id} bap ${JSON.stringify(
+                    state.belowAnchorElementPositions ? Array.from(state.belowAnchorElementPositions.entries()) : "",
+                )}`,
+            );
             return 0;
         }
         return res;
@@ -359,10 +368,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         const topPad = (peek$<number>(ctx, "stylePaddingTop") || 0) + (peek$<number>(ctx, "headerSize") || 0);
         const previousScrollAdjust = peek$<number>(ctx, "currentScrollAdjust") || 0;
-        const scrollExtra = 0//Math.max(-16, Math.min(16, speed)) * 16;
+        const scrollExtra = Math.max(-16, Math.min(16, speed)) * 16;
         const scroll = scrollState - previousScrollAdjust - topPad;
 
-       // console.log("scroll", scroll, scrollState, previousScrollAdjust, topPad);
+        console.log("scroll", scroll, "SS", scrollState, "adjust", previousScrollAdjust);
 
         let scrollBufferTop = scrollBuffer;
         let scrollBufferBottom = scrollBuffer;
@@ -662,9 +671,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
         // If it's 0 then we're waiting for the initial layout to complete
         if (state.numPendingInitialLayout === 0) {
-          
             state.numPendingInitialLayout = state.endBuffered - state.startBuffered + 1;
-            console.log("numPendingInitialLayout", state.numPendingInitialLayout);
         }
 
         if (state.viewabilityConfigCallbackPairs) {
@@ -840,7 +847,10 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-    const calcTotalSizesAndPositions = ({ forgetPositions = false, isFirst }: {forgetPositions: boolean, isFirst: boolean}) => {
+    const calcTotalSizesAndPositions = ({
+        forgetPositions = false,
+        isFirst,
+    }: { forgetPositions: boolean; isFirst: boolean }) => {
         let totalSize = 0;
         let totalSizeBelowIndex = 0;
         const indexByKey = new Map();
@@ -944,35 +954,30 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             totalSize += maxSizeInRow;
         }
         const state = refState.current;
-        state.ignoreScrollFromCalcTotal = true;
-        requestAnimationFrame(() => {
-            state.ignoreScrollFromCalcTotal = false;
-        });
+        // state.ignoreScrollFromCalcTotal = true;
+        // requestAnimationFrame(() => {
+        //     state.ignoreScrollFromCalcTotal = false;
+        // });
         addTotalSize(null, totalSize, totalSizeBelowIndex);
     };
 
-   
-
     useEffect(() => {
-
         const isFirst = !refState.current.isSecond;
         refState.current.isSecond = true;
 
-       
         if (isFirst) {
             initalizeStateVars();
             const state = refState.current!;
             const viewability = setupViewability(props);
             state.viewabilityConfigCallbackPairs = viewability;
             state.enableScrollForNextCalculateItemsInView = !viewability;
-    
+
             doInitialAllocateContainers();
         }
         checkResetContainers(/*isFirst*/ isFirst);
 
-
         // Run first time and whenever data changes
-    
+
         if (isFirst || didDataChange || numColumnsProp !== peek$<number>(ctx, "numColumns")) {
             refState.current.lastBatchingAction = Date.now();
             if (!keyExtractorProp && !isFirst && didDataChange) {
@@ -980,7 +985,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 refState.current.sizes.clear();
                 refState.current.positions.clear();
             }
-    
+
             calcTotalSizesAndPositions({ forgetPositions: false, isFirst });
         }
     }, [dataProp, numColumnsProp]);
@@ -1077,8 +1082,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
     };
 
-  
-
     const updateItemSize = useCallback((itemKey: string, size: number) => {
         const state = refState.current!;
         const { sizes, indexByKey, sizesLaidOut, data, rowHeights } = state;
@@ -1094,8 +1097,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         const prevSize = getItemSize(itemKey, index, data as any);
 
         let needsCalculate = false;
-        let layoutPending = state.numPendingInitialLayout >= 0;
-        //console.log("LP", layoutPending, state.numPendingInitialLayout);
+        const layoutPending = state.numPendingInitialLayout >= 0;
 
         if (state.numPendingInitialLayout > 0) {
             state.numPendingInitialLayout--;
@@ -1155,7 +1157,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
             addTotalSize(itemKey, diff, 0);
 
-            console.log(layoutPending);
             doMaintainScrollAtEnd(true);
 
             if (onItemSizeChanged) {

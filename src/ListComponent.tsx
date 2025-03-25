@@ -52,22 +52,19 @@ const PaddingAndAdjust = () => {
     const scrollAdjust = use$<number>("scrollAdjust");
 
     const paddingStyle = { paddingTop: animPaddingTop };
-    const scrollAdjustStyle = { marginTop: scrollAdjust}
+    const scrollAdjustStyle = { marginTop: scrollAdjust };
     return (
-        <>   
-        <Animated.View style={paddingStyle} />     
-        <Animated.View
-            style={scrollAdjustStyle}
-            onLayout={(evt) => {
-                console.log("onLayout", { layout: evt.nativeEvent.layout });
-                set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
-            }}
-        />
+        <>
+            <Animated.View style={paddingStyle} />
+            <Animated.View
+                style={scrollAdjustStyle}
+                onLayout={(evt) => {
+                    set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
+                }}
+            />
         </>
-
     );
 };
-
 
 const PaddingAndAdjustDevMode = () => {
     const animPaddingTop = useValue$("paddingTop", (v) => v, true);
@@ -75,13 +72,15 @@ const PaddingAndAdjustDevMode = () => {
     const ctx = useStateContext();
     return (
         <>
-         <Animated.View style={{ paddingTop: animPaddingTop }} />
-            <Animated.View style={{marginTop: scrollAdjust}}  
-            onLayout={(evt) => {
-                console.log("onLayout", { layout: evt.nativeEvent });
-                set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
-            }} />
-           
+            <Animated.View style={{ paddingTop: animPaddingTop }} />
+            <Animated.View
+                style={{ marginTop: scrollAdjust }}
+                onLayout={(evt) => {
+                    set$(ctx, "currentScrollAdjust", evt.nativeEvent.layout.y);
+                    console.log("CurrentScrollAdjust", { currentScrollAdjust: evt.nativeEvent.layout.y });
+                }}
+            />
+
             <Animated.View
                 style={{
                     position: "absolute",
