@@ -136,11 +136,11 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         if (index) {
             let offset = 0;
             const canGetSize = !!refState.current;
-            if (canGetSize || getEstimatedItemSize) {
+            if (getEstimatedItemSize) {
                 const sizeFn = (index: number) => {
-                    if (canGetSize) {
-                        return getItemSize(getId(index), index, data[index]);
-                    }
+                    // if (canGetSize) {
+                    //     return getItemSize(getId(index), index, data[index]);
+                    // }
                     return getEstimatedItemSize!(index, data[index]);
                 };
                 for (let i = 0; i < index; i++) {
@@ -269,7 +269,14 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 refState.current!.scrollAdjustHandler.requestAdjust(applyAdjustValue, (diff: number) => {
                     // event state.scroll will contain invalid value, until next handleScroll
                     // apply adjustment
-                    state.scroll -= diff;
+                    if (Math.abs(diff) > 400 && !state.ignoreScrollFromCalcTotal) {
+                        state.ignoreScrollFromCalcTotal = true;
+                        console.log("ignoreScroll start", Math.abs(diff));
+                        setTimeout(() => {
+                            state.ignoreScrollFromCalcTotal = false;
+                            console.log("ignoreScroll end");
+                        }, 16);
+                    }
                 });
             }
         }
@@ -358,7 +365,7 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
         }
 
         const topPad = (peek$<number>(ctx, "stylePaddingTop") || 0) + (peek$<number>(ctx, "headerSize") || 0);
-        const previousScrollAdjust = scrollAdjustHandler.getAppliedAdjust();
+        const previousScrollAdjust = scrollAdjustHandler.getSavedAdjust();
         const scrollExtra = Math.max(-16, Math.min(16, speed)) * 16;
         const scroll = scrollState - previousScrollAdjust - topPad;
 
@@ -366,6 +373,13 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             set$(ctx, "debugRawScroll", scrollState);
             set$(ctx, "debugComputedScroll", scroll);
         }
+
+        if (state.ignoreScrollFromCalcTotal) {
+            console.log("ignoring", scroll, "scrollState", scrollState, "previousScrollAdjust", previousScrollAdjust);
+            return;
+        }
+
+        console.log("scroll", scroll, "scrollState", scrollState, "previousScrollAdjust", previousScrollAdjust);
 
         let scrollBufferTop = scrollBuffer;
         let scrollBufferBottom = scrollBuffer;
@@ -1234,9 +1248,6 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
             }
 
             const state = refState.current!;
-            if (state.ignoreScrollFromCalcTotal) {
-                return;
-            }
 
             state.hasScrolled = true;
             state.lastBatchingAction = Date.now();
@@ -1329,18 +1340,29 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
 
                 // we need to pause adjust while we are scrolling, otherwise target position will move which will result in incorrect scroll
                 state.scrollAdjustHandler.pauseAdjust();
+
                 // safety net, in case onMomentScrollEnd is not called
                 // TODO: do we really need this? for issues like https://github.com/facebook/react-native/pull/43654 ?
                 setTimeout(
                     () => {
+                        // unPauseAdjust is prone to cause issues with scrolling
+                        state.ignoreScrollFromCalcTotal = true;
+                        console.log("ignore start");
+
                         const wasAdjusted = state.scrollAdjustHandler.unPauseAdjust();
-                        if (wasAdjusted) {
-                            refState.current!.scrollVelocity = 0;
-                            refState.current!.scrollHistory = [];
-                            calculateItemsInView();
-                        }
+
+                        // let's pause until scroll value is stabillized
+                        setTimeout(() => {
+                            state.ignoreScrollFromCalcTotal = false;
+                            console.log("ignore end");
+                            if (wasAdjusted) {
+                                refState.current!.scrollVelocity = 0;
+                                refState.current!.scrollHistory = [];
+                                calculateItemsInView();
+                            }
+                        }, 200);
                     },
-                    animated ? 1000 : 50,
+                    animated ? 3000 : 50,
                 );
 
                 const offset = horizontal ? { x: firstIndexScrollPostion, y: 0 } : { x: 0, y: firstIndexScrollPostion };
@@ -1388,12 +1410,12 @@ const LegendListInner = typedForwardRef(function LegendListInner<T>(
                 updateItemSize={updateItemSize}
                 handleScroll={handleScroll}
                 onMomentumScrollEnd={(event) => {
-                    const wasPaused = refState.current!.scrollAdjustHandler.unPauseAdjust();
-                    if (wasPaused) {
-                        refState.current!.scrollVelocity = 0;
-                        refState.current!.scrollHistory = [];
-                        calculateItemsInView();
-                    }
+                    // const wasPaused = refState.current!.scrollAdjustHandler.unPauseAdjust();
+                    // if (wasPaused) {
+                    //     refState.current!.scrollVelocity = 0;
+                    //     refState.current!.scrollHistory = [];
+                    //     calculateItemsInView();
+                    // }
                     if (onMomentumScrollEnd) {
                         onMomentumScrollEnd(event);
                     }
