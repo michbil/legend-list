@@ -1,5 +1,5 @@
 import renderItem from "@/app/cards-renderItem";
-import { DO_SCROLL_TEST, DRAW_DISTANCE, ESTIMATED_ITEM_LENGTH, RECYCLE_ITEMS } from "@/constants/constants";
+import { DO_SCROLL_TEST, RECYCLE_ITEMS } from "@/constants/constants";
 import { useScrollTest } from "@/constants/useScrollTest";
 import { FlashList, type ListRenderItemInfo } from "@shopify/flash-list";
 import { Fragment, useRef } from "react";
@@ -44,9 +44,7 @@ export default function HomeScreen() {
                 renderItem={renderItemFn}
                 keyExtractor={(item) => item.id}
                 contentContainerStyle={styles.listContainer}
-                estimatedItemSize={ESTIMATED_ITEM_LENGTH}
-                drawDistance={DRAW_DISTANCE / 2} // FlashList seems to multiply the drawDistance internally so this makes it about even
-                // initialScrollIndex={500}
+                //      drawDistance={DRAW_DISTANCE / 2} // FlashList seems to multiply the drawDistance internally so this makes it about even
                 ref={scrollRef}
                 ListHeaderComponent={<View />}
                 ListHeaderComponentStyle={styles.listHeader}
